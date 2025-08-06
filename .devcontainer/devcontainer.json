@@ -1,14 +1,16 @@
 {
-  "name": "Python 3",
+  "name": "Python 3 with MongoDB",
   "image": "mcr.microsoft.com/vscode/devcontainers/python:3.13",
-  "forwardPorts": [8000],
-  "postCreateCommand": "pip install -r requirements.txt",
+  "forwardPorts": [8000, 27017],
+  "postCreateCommand": "wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-org-7.0.gpg && echo 'deb [ signed-by=/usr/share/keyrings/mongodb-org-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main' | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list && sudo apt-get update && sudo apt-get install -y mongodb-org && sudo mkdir -p /data/db && sudo chown -R $USER /data/db && pip install -r requirements.txt",
+  "postStartCommand": "sudo mongod --fork --logpath /var/log/mongodb.log && echo 'MongoDB started'",
   "customizations": {
     "vscode": {
       "extensions": [
         "GitHub.copilot",
         "ms-python.python",
-        "ms-python.debugpy"
+        "ms-python.debugpy",
+        "mongodb.mongodb-vscode"
       ]
     }
   }
