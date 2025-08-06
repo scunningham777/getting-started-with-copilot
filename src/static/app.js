@@ -25,6 +25,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participants:</strong>
+            ${details.participants.length > 0 ? `<ul class="participants-list">${details.participants.map(p => `<li><span class="participant-email">${p}</span> <span class="delete-participant" title="Remove participant" data-activity="${name}" data-email="${p}">&times;</span></li>`).join('')}</ul>` : '<span class="no-participants">No one signed up yet.</span>'}
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -34,6 +38,45 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+      });
+
+      // After all cards are rendered, add event listeners for delete icons (only once per icon)
+      activitiesList.querySelectorAll('.delete-participant').forEach(icon => {
+        let isRequestInProgress = false;
+        icon.addEventListener('click', async (e) => {
+          if (isRequestInProgress) return;
+          isRequestInProgress = true;
+          icon.style.pointerEvents = 'none';
+          icon.style.opacity = '0.5';
+          const activity = icon.getAttribute('data-activity');
+          const email = icon.getAttribute('data-email');
+          try {
+            const response = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
+              method: 'DELETE',
+            });
+            const result = await response.json();
+            if (response.ok) {
+              messageDiv.textContent = result.message;
+              messageDiv.className = 'success';
+              fetchActivities();
+            } else {
+              messageDiv.textContent = result.detail || 'An error occurred';
+              messageDiv.className = 'error';
+            }
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => {
+              messageDiv.classList.add('hidden');
+            }, 5000);
+          } catch (error) {
+            messageDiv.textContent = 'Failed to remove participant. Please try again.';
+            messageDiv.className = 'error';
+            messageDiv.classList.remove('hidden');
+          } finally {
+            isRequestInProgress = false;
+            icon.style.pointerEvents = '';
+            icon.style.opacity = '';
+          }
+        });
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
@@ -62,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
